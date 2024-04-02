@@ -1,0 +1,70 @@
+import math
+import random
+
+# Função de aptidão (fitness function)
+def fitness_function(individual):
+    return -abs(individual * math.sin(math.sqrt(abs(individual))))
+
+# Geração da população inicial
+def generate_initial_population(pop_size, gene_pool):
+    return [random.choice(gene_pool) for _ in range(pop_size)]
+
+# Seleção dos indivíduos para reprodução
+def select_parents(population, fitness_scores):
+    total_fitness = sum(fitness_scores)
+    # Como no nosso caso o menor fitness é o mais próximo do desejado, eu não faço ideia do que fazer
+    selection_probs = [f / total_fitness for f in fitness_scores]
+    return random.choices(population, weights=selection_probs, k=2)
+
+# Crossover para produzir descendentes
+def crossover(parent1, parent2):
+    crossover_point = 8
+
+    # Define a quantidade de bits (garante 10 bits, neste caso)
+    parent1 = bin(parent1)[2:].zfill(10)
+    parent2 = bin(parent2)[2:].zfill(10)
+    
+    offspring1 = parent1[:crossover_point] + parent2[crossover_point:]
+    offspring2 = parent2[:crossover_point] + parent1[crossover_point:]
+    return offspring1, offspring2
+
+# Mutação para introduzir variação
+def mutate(individual, mutation_rate):
+    mutation = str.maketrans('01', '10')
+    if random.random() < mutation_rate:
+        mutation_point = random.randint(0, len(individual) - 1)
+        individual = individual[:mutation_point] + individual[mutation_point].translate(mutation) + individual[mutation_point+1:]
+    individual = int(individual, 2)
+    return individual
+
+# Algoritmo genético principal
+def genetic_algorithm(pop_size, gene_pool, generations, mutation_rate):
+    population = generate_initial_population(pop_size, gene_pool)
+
+    for _ in range(generations):
+        # Avaliação da aptidão
+        fitness_scores = [fitness_function(ind) for ind in population]
+        
+        new_population = []
+        for _ in range(pop_size // 2):
+            parent1, parent2 = select_parents(population, fitness_scores)
+            offspring1, offspring2 = crossover(parent1, parent2)
+            offspring1 = mutate(offspring1, mutation_rate)
+            offspring2 = mutate(offspring2, mutation_rate)
+            new_population.extend([offspring1, offspring2])
+        
+        population = new_population
+        
+    # Retorna o melhor indivíduo encontrado
+    best_individual = min(population, key=fitness_function)
+    return best_individual
+
+# Parâmetros do GA
+POP_SIZE = 20
+GENE_POOL = range(0, 512)
+GENERATIONS = 10
+MUTATION_RATE = 0.01
+
+# Execução do GA
+melhor_descendente = genetic_algorithm(POP_SIZE, GENE_POOL, GENERATIONS, MUTATION_RATE)
+print(f'Melhor descendente encontrado: {melhor_descendente}')
